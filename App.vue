@@ -12,7 +12,7 @@
       ></el-date-picker>
     </div>
     <div class="table-wrap">
-      <el-table :data="guestData" style="width: 100%" height="850">
+      <el-table :data="guestData" style="width: 100%" height="770">
         >
         <el-table-column prop="checkindate" fixed label="日期" width="150"></el-table-column>
         <el-table-column label="房间信息">
@@ -24,13 +24,14 @@
               :key="i"
             >
               <template slot-scope="scope">
-                <span>{{scope}}</span>
+                <span>{{scope.row.guestname}}</span>
               </template>
             </el-table-column>
           </el-table-column>
         </el-table-column>
       </el-table>
     </div>
+    <Drawer></Drawer>
   </div>
 </template>
 
@@ -38,7 +39,10 @@
 import _data from "./script/data";
 import _guest from "./script/guest";
 import { groupBy } from "lodash";
+import Drawer from "./comp/drawer";
+
 export default {
+  components: { Drawer },
   data() {
     return {
       tableData: [

@@ -35,3 +35,18 @@ export async function postRequest(option) {
   const res = await http.post(url, params);
   return res.data;
 }
+
+/**
+ * POST添加订单
+ * @param {Number} id - 参数注释
+ * @return {Promise} Object
+ */
+export async function addOrder(option) {
+  const url = "/order/addOrder.htm";
+  const params = {
+    roomids: "",
+    ...option
+  };
+  const res = await http.post(url, params);
+  return res.data;
+}
