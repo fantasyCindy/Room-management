@@ -1,0 +1,11 @@
+node_modules
+.svn
+ueditor
+lib
+bootstrap
+plugins
+simulate
+
+.vscode/sftp.json
+.vscode/sftp.json
+.vscode/sftp.json
