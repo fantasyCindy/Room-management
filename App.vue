@@ -12,130 +12,150 @@
       ></el-date-picker>
     </div>
     <div class="table-wrap">
-      <el-table :data="guestData" style="width: 100%" height="770">
+      <el-table :data="roomstatus" style="width: 100%" height="770" @cell-click="showDetail">
         >
-        <el-table-column prop="checkindate" fixed label="日期" width="150"></el-table-column>
+        <el-table-column prop="checkindate" fixed label="日期" width="150">
+          <template slot-scope="scope">
+            <span>{{scope.row._arrival_time}}</span>
+          </template>
+        </el-table-column>
         <el-table-column label="房间信息">
-          <el-table-column :label="val.roomtypename" v-for="(val,key) in roomData" :key="key">
-            <el-table-column
-              prop="guestname"
-              :label="val.roomtypename + i"
-              v-for="i in parseInt(val.roomcount)"
-              :key="i"
-            >
+          <el-table-column :label="val.name" v-for="val in roomData" :key="val.id">
+            <el-table-column prop="guestname" :label="i.name" v-for="i in val.roomList" :key="i.id">
               <template slot-scope="scope">
-                <span>{{scope.row.guestname}}</span>
+                <span
+                  :class="{fill:i.id == scope.row.roomid}"
+                >{{scope.row|filterval(i.id)}}{{i.id}}-{{scope.row.roomid}}</span>
               </template>
             </el-table-column>
           </el-table-column>
         </el-table-column>
       </el-table>
     </div>
-    <Drawer></Drawer>
+    <Drawer :dialog="dialog" :father="this" :list="params"></Drawer>
   </div>
 </template>
 
 <script>
-import _data from "./script/data";
-import _guest from "./script/guest";
-import { groupBy } from "lodash";
+// import _data from "./script/data";
+// import _guest from "./script/guest";
+import { orderBy } from "lodash";
 import Drawer from "./comp/drawer";
-
+import {
+  getRoomTypeList,
+  getRoomList,
+  getModeList,
+  getSourceList,
+  getOrderStatus
+} from "./script/api";
 export default {
   components: { Drawer },
   data() {
     return {
-      tableData: [
-        {
-          date: "2016-05-03",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        },
-        {
-          date: "2016-05-02",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        },
-        {
-          date: "2016-05-04",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        },
-        {
-          date: "2016-05-01",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        },
-        {
-          date: "2016-05-08",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        },
-        {
-          date: "2016-05-06",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        },
-        {
-          date: "2016-05-07",
-          name: "王小虎",
-          province: "上海",
-          city: "普陀区",
-          address: "上海市普陀区金沙江路 1518 弄",
-          zip: 200333
-        }
-      ],
+      params: {
+        roomList: [], //房间列表
+        modeList: [], //支付方式列表
+        sourceList: [] //订单来源列表
+      },
       selectMonth: "",
       dayCount: "",
       dateArr: [],
       arr: [],
       len: 0, //房间总数
       roomData: {},
-      guestData: []
+      roomstatus: [],
+      dialog: false
     };
   },
   filters: {
     fill(val) {
       val = val < 10 ? "0" + val : val;
       return val;
+    },
+    filterval(val, roomid) {
+      if (val.id == roomid) {
+        return val.name;
+      } else {
+        return "";
+      }
     }
   },
   methods: {
     select() {
+      console.log("==this.selectMonth====", this.selectMonth);
+
       /**获取这个月有多少天 */
       this.dateArr = this.selectMonth.split("-");
       this.dayCount = new Date(this.dateArr[0], this.dateArr[1], 0).getDate();
-      console.log("this.dayCount", _data);
+      let virtual = [];
+      for (let i = 1; i <= this.dayCount; i++) {
+        let day = i < 10 ? "0" + i : i;
+        let key = `${this.selectMonth}-${day} 00:00:00`;
+        let obj = new Object();
+        obj.arrival_time = key;
+        virtual.push(obj);
+      }
+      this.getRoomStatus(virtual);
+      // console.log("virtual", virtual);
+    },
+    showDetail(row, column, cell, event) {
+      console.log("===row===", row);
+      this.getRoomList();
+      this.getModeList();
+      this.getSourceList();
+      this.dialog = true;
+    },
+    close() {
+      this.dialog = false;
+    },
+    async getRoomTypeList() {
+      var res = await getRoomTypeList();
+      this.roomData = res;
+    },
+    async getRoomList() {
+      if (this.params.roomList.length < 1) {
+        this.params.roomList = await getRoomList();
+      }
+    },
+    async getModeList() {
+      if (this.params.modeList.length < 1) {
+        this.params.modeList = await getModeList();
+      }
+    },
+    async getSourceList() {
+      if (this.params.sourceList.length < 1) {
+        this.params.sourceList = await getSourceList();
+      }
+    },
+    handle(arr) {
+      return arr.map(item => {
+        item._arrival_time = item.arrival_time.replace(" 00:00:00", "");
+        item.arrival_time = item.arrival_time.replace(/-/g, "/");
+        item._timestamp = new Date(item.arrival_time).getTime();
+        return item;
+      });
+    },
+    async getRoomStatus(ops) {
+      var res = await getOrderStatus();
+      this.roomstatus = res;
+      this.roomstatus.push(...ops);
+      // let orderByDate = orderByDate(res, "arrival_time");
+      // let result = Object.assign(ops, orderByDate);
+      this.roomstatus = this.handle(this.roomstatus);
+      this.roomstatus = orderBy(this.roomstatus, "_timestamp", "asc");
+      console.log("===roomstatus===", this.roomstatus);
     }
   },
   mounted() {
-    console.log("_data.data", _data.data);
-    this.len = 0;
-    for (let key in _data.data) {
-      this.len += parseInt(_data.data[key].roomcount);
-    }
-    this.roomData = _data.data;
-    this.guestData = _guest.data.roomstatus;
-    // this.guestData = groupBy(this.guestData, "checkindate");
-    console.log("=", this.guestData);
+    // this.len = 0;
+    // for (let key in _data.data) {
+    //   this.len += parseInt(_data.data[key].roomcount);
+    // }
+    // this.roomData = _data.data;
+    // this.roomstatus = _guest.data.roomstatus;
+    // this.roomstatus = groupBy(this.roomstatus, "checkindate");
+    // console.log("=", this.roomstatus);
+    this.getRoomTypeList();
   }
 };
 </script>

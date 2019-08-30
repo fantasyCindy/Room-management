@@ -48,5 +48,55 @@ export async function addOrder(option) {
     ...option
   };
   const res = await http.post(url, params);
+  return res;
+}
+
+/**获取房间类型列表 */
+export async function getRoomTypeList(option) {
+  const url = "/order/roomtypeList.htm";
+  const params = {
+    ...option
+  };
+  const res = await http.get(url, { params });
+  return res.data;
+}
+
+/**获取房间列表 */
+export async function getRoomList(option) {
+  const url = "/order/roomList.htm";
+  const params = {
+    ...option
+  };
+  const res = await http.get(url, { params });
+  return res.data;
+}
+
+/**获取支付方式 */
+export async function getModeList(option) {
+  const url = "/order/modeList.htm";
+  const params = {
+    ...option
+  };
+  const res = await http.get(url, { params });
+  return res.data;
+}
+
+/**获取订单来源 */
+export async function getSourceList(option) {
+  const url = "/order/sourceList.htm";
+  const params = {
+    ...option
+  };
+  const res = await http.get(url, { params });
+  return res.data;
+}
+
+/**订单状态列表（房态） */
+export async function getOrderStatus(option) {
+  const url = "/order/orderStatus.htm";
+  const params = {
+    ...option
+  };
+  const res = await http.get(url, { params });
   return res.data;
 }
