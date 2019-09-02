@@ -21,11 +21,15 @@
         </el-table-column>
         <el-table-column label="房间信息">
           <el-table-column :label="val.name" v-for="val in roomData" :key="val.id">
-            <el-table-column prop="guestname" :label="i.name" v-for="i in val.roomList" :key="i.id">
+            <el-table-column
+              prop="guestname"
+              :label="i.name"
+              v-for="i in val.roomList"
+              :key="i.id"
+              :class-name="i.id == val.id ? 'fill' : ''"
+            >
               <template slot-scope="scope">
-                <span
-                  :class="{fill:i.id == scope.row.roomid}"
-                >{{scope.row|filterval(i.id)}}{{i.id}}-{{scope.row.roomid}}</span>
+                <span>{{scope.row|filterval(i.id)}}{{scope.row.roomid}}-{{i.id}}</span>
               </template>
             </el-table-column>
           </el-table-column>
@@ -72,8 +76,10 @@ export default {
       val = val < 10 ? "0" + val : val;
       return val;
     },
-    filterval(val, roomid) {
-      if (val.id == roomid) {
+    filterval(val, id) {
+      console.log(val.roomName, val.roomid);
+
+      if (val.roomid == id) {
         return val.name;
       } else {
         return "";
@@ -100,6 +106,9 @@ export default {
     },
     showDetail(row, column, cell, event) {
       console.log("===row===", row);
+      console.log("===column===", column);
+      console.log("===cell===", cell);
+      console.log("===event===", event);
       this.getRoomList();
       this.getModeList();
       this.getSourceList();
@@ -138,7 +147,7 @@ export default {
     async getRoomStatus(ops) {
       var res = await getOrderStatus();
       this.roomstatus = res;
-      this.roomstatus.push(...ops);
+      // this.roomstatus.push(...ops);
       // let orderByDate = orderByDate(res, "arrival_time");
       // let result = Object.assign(ops, orderByDate);
       this.roomstatus = this.handle(this.roomstatus);

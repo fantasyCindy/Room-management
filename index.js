@@ -2,7 +2,7 @@ import "./style/reset.css";
 import "./style/common.css";
 
 import Vue from "vue";
-import App from "./App";
+import App from "./App6";
 import { DatePicker, Table, TableColumn, Drawer, Dialog, Select, Option, Button, Form, FormItem, Input, InputNumber, Divider, Message } from "element-ui";
 Vue.use(DatePicker)
   .use(Table)
