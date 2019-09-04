@@ -22,7 +22,7 @@ module.exports = {
     //在测试环境中自动在PublicPath前添加的前缀
     //生产环境(env=pro)会自动去掉
     //如果命令行中使用了"epath"会强制添加
-    envPrefix: "",
+    envPrefix: "/xiaoqing",
     extractCSS: false, //提取CSS到单独文件(仅生产环境)
     splitModules: false, //分离第三方模块到单独文件(仅生产环境)
     cssModules: false, //是否启用CSSModules(仅.scss类型文件)

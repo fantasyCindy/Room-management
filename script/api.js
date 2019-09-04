@@ -44,7 +44,19 @@ export async function postRequest(option) {
 export async function addOrder(option) {
   const url = "/order/addOrder.htm";
   const params = {
-    roomids: "",
+    ...option
+  };
+  const res = await http.post(url, params);
+  return res;
+}
+/**
+ * POST修改、删除订单
+ * @param {Number} id - 参数注释
+ * @return {Promise} Object
+ */
+export async function editOrder(option) {
+  const url = "/order/editOrder.htm";
+  const params = {
     ...option
   };
   const res = await http.post(url, params);

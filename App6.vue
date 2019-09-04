@@ -1,9 +1,9 @@
 <template>
   <div id="app">
     <div class="block">
-      <span class="demonstration">日期</span>
+      <span class="demonstration">选择日期</span>
       <el-date-picker
-        v-model="selectMonth"
+        v-model="month"
         type="month"
         @change="select"
         format="yyyy 年 MM 月"
@@ -24,7 +24,7 @@
             ></td>
           </tr>
           <tr>
-            <td v-for="item in allRoom" :key="item.id" v-text="item.name"></td>
+            <td :style="tdWidth" v-for="item in allRoom" :key="item.id" v-text="item.name"></td>
           </tr>
         </table>
       </div>
@@ -40,12 +40,18 @@
         <table class="orderList" border="1">
           <tr v-for="item in dayList" :key="item.arrival_time" class="grid">
             <td
+              :style="tdWidth"
               v-for="val in allRoom"
               :key="val.id"
               :data-roomid="val.id"
               :data-time="item.arrival_time"
-              :id="item._timestamp+'-'+val.id"
-            ></td>
+              class="grid-cell"
+              :title="val.name"
+              :id="'cell'+'-'+item._timestamp+'-'+val.id"
+            >
+              <!-- <p class="rmb">{{val.name}}</p> -->
+            </td>
+            <!-- {souceById[item._timestamp+'-'+val.id].name} -->
           </tr>
         </table>
       </div>
@@ -59,6 +65,7 @@
 // import _guest from "./script/guest";
 import { orderBy } from "lodash";
 import Drawer from "./comp/drawer";
+import { startOfMonth, format, endOfMonth } from "date-fns";
 import {
   getRoomTypeList,
   getRoomList,
@@ -66,6 +73,8 @@ import {
   getSourceList,
   getOrderStatus
 } from "./script/api";
+
+function fillForm(params) {}
 export default {
   components: { Drawer },
   data() {
@@ -73,9 +82,9 @@ export default {
       params: {
         roomList: [], //房间列表
         modeList: [], //支付方式列表
-        sourceList: [] //订单来源列表
+        sourceList: [], //订单来源列表
+        editDetail: {}
       },
-      selectMonth: "",
       dayCount: "",
       dateArr: [],
       arr: [],
@@ -84,30 +93,17 @@ export default {
       roomstatus: [],
       dialog: false,
       allRoom: [],
-      dayList: []
+      dayList: [],
+      souceById: {},
+      tdWidth: "",
+      tableWidth: 1345,
+      month: ""
     };
   },
   filters: {
     fill(val) {
       val = val < 10 ? "0" + val : val;
       return val;
-    },
-    filterval(roomid, date, data) {
-      // var name = "";
-      // data.map(item => {
-      //   if (item.arrival_time == date && item.roomid == roomid) {
-      //     name = item.name;
-      //   } else {
-      //     name = "";
-      //   }
-      //   console.log("name===", name);
-      //   return name;
-      // });
-      // if (val.roomid == id) {
-      //   return val.name;
-      // } else {
-      //   return "";
-      // }
     },
     format(val) {
       val = val.replace(" 00:00:00", "");
@@ -116,12 +112,13 @@ export default {
   },
   methods: {
     select() {
-      console.log("==this.selectMonth====", this.selectMonth);
-      this.getRoomStatus(this.dayList);
+      this.getDayList(this.month);
+    },
+    getDayList(month) {
       /**获取这个月有多少天 */
-      this.dateArr = this.selectMonth.split("-");
+      this.dayList = [];
+      this.dateArr = month.split("-");
       this.dayCount = new Date(this.dateArr[0], this.dateArr[1], 0).getDate();
-
       for (let i = 1; i <= this.dayCount; i++) {
         let day = i < 10 ? "0" + i : i;
         let key = `${this.dateArr[0]}/${this.dateArr[1]}/${day}`;
@@ -130,27 +127,29 @@ export default {
         obj._timestamp = new Date(key).getTime();
         this.dayList.push(obj);
       }
-      // console.log("virtual", virtual);
+      let startTime = month + "-01";
+      let endTime = month + "-" + this.dayCount;
+      this.getRoomStatus({ startTime, endTime });
     },
     showDetail(row, column, cell, event) {
-      console.log("===row===", row);
-      console.log("===column===", column);
-      console.log("===cell===", cell);
-      console.log("===event===", event);
       this.getRoomList();
       this.getModeList();
       this.getSourceList();
       this.dialog = true;
     },
     close() {
+      this.params.editDetail = {};
       this.dialog = false;
     },
     async getRoomTypeList() {
+      this.roomData = {};
+      this.allRoom = [];
       var res = await getRoomTypeList();
       this.roomData = res;
       this.roomData.map(item => {
         return this.allRoom.push(...item.roomList);
       });
+      this.tdWidth = { width: this.tableWidth / this.allRoom.length + "px" };
     },
     async getRoomList() {
       if (this.params.roomList.length < 1) {
@@ -169,46 +168,65 @@ export default {
     },
     handle(arr) {
       return arr.map(item => {
-        item._arrival_time = item.arrival_time.replace(" 00:00:00", "");
-        item.arrival_time = item.arrival_time.replace(/-/g, "/");
+        item.arrival_time = item.arrival_time
+          .replace(" 00:00:00", "")
+          .replace(/-/g, "/");
         item._timestamp = new Date(item.arrival_time).getTime();
         return item;
       });
     },
     async getRoomStatus(ops) {
-      var res = await getOrderStatus();
+      this.roomstatus = [];
+      var res = await getOrderStatus(ops);
       this.roomstatus = res;
-      console.log("===this.roomstatus===", this.roomstatus);
-      // this.roomstatus.push(...ops);
-      // let orderByDate = orderByDate(res, "arrival_time");
-      // let result = Object.assign(ops, orderByDate);
       this.roomstatus = this.handle(this.roomstatus);
       this.roomstatus = orderBy(this.roomstatus, "_timestamp", "asc");
-      this.roomstatus.forEach(item => {
-        const id = item._timestamp + "-" + item.id;
-        console.log(">> id", id);
+      setTimeout(() => {
+        this.roomstatus.forEach(item => {
+          const id = "cell-" + item._timestamp + "-" + item.roomid;
+          item.style = item.color ? `style = "background:${item.color}"` : "";
+          item._title = `title="${item.name}【${item.sourceName}】\n${item.arrival_time}入住,住${item.night}晚\n订单金额:${item.price}\n备注:${item.remarks}"`;
 
-        document.getElementById(
-          id
-        ).innerHTML = `<span class="customer"  data-name="${item.name}" data-type="${item._arrival_time}">${item.name}</span>`;
-      });
+          document.getElementById(
+            id
+          ).innerHTML = `<div class="customer" ${item._title} data-name='${item.name}' data-roomid='${item.roomid}' ${item.style}  data-phone="${item.phone}" data-idcard="${item.idcard}" data-arrival_time="${item.arrival_time}" data-night="${item.night}" data-price="${item.price}" data-sourceid="${item.sourceid}" data-modeid="${item.modeid}" data-status="${item.status}" data-remarks="${item.remarks}" data-color="${item.color}" data-id="${item.id}">
+                <p class="customerDetail">${item.name}</p>
+                <p class="customerDetail">${item.sourceName}</p>
+              </div>`;
+        });
+      }, 500);
+    },
+    getList(startMonth) {
+      this.month = startMonth ? format(startMonth, "yyyy-MM") : this.month;
+      this.getDayList(this.month);
+      this.getRoomTypeList();
     }
   },
   mounted() {
-    // this.len = 0;
-    // for (let key in _data.data) {
-    //   this.len += parseInt(_data.data[key].roomcount);
-    // }
-    // this.roomData = _data.data;
-    // this.roomstatus = _guest.data.roomstatus;
-    // this.roomstatus = groupBy(this.roomstatus, "checkindate");
-    // console.log("=", this.roomstatus);
-    this.getRoomTypeList();
+    const today = new Date();
+    const startMonth = startOfMonth(today); //Thu Jan 31 2019 23:59:59 GMT+0800
+    this.getList(startMonth);
     document.body.addEventListener("click", e => {
-      if (e.target.classList.contains("customer")) {
-        const { type, name } = e.target.dataset;
-        console.log(">> type", type);
-        console.log(">> name", name);
+      if (e.target.classList.contains("customerDetail")) {
+        // const {phone,name} = e.target.parentNode.dataset;  //es6
+        this.params.editDetail = e.target.parentNode.dataset;
+        this.showDetail();
+      } else if (e.target.classList.contains("grid-cell")) {
+        this.params.editDetail = {
+          roomid: e.target.dataset.roomid,
+          name: "",
+          phone: "",
+          idcard: "",
+          arrival_time: e.target.dataset.time,
+          night: 1,
+          price: "",
+          sourceid: "",
+          modeid: "",
+          status: "0",
+          remarks: "",
+          color: "#ffd600"
+        };
+        this.showDetail();
       }
     });
   }
@@ -216,12 +234,13 @@ export default {
 </script>
 
 <style lang="scss" scoped>
-$marginLeft: 152px;
+$marginLeft: 150px;
 #app {
   // height: 608px;
   position: relative;
   overflow: auto;
-  margin: 30px;
+  margin: 30px auto;
+  width: 1500px;
   .block {
     margin-bottom: 20px;
   }
@@ -231,22 +250,26 @@ $marginLeft: 152px;
     border: 1px solid #dcdfe6;
   }
   .table-right {
-    width: 90%;
+    // width: 80%;
     // height: 634px;
     margin-left: $marginLeft;
     overflow: auto;
     .roomTypeList {
-      // width: 100%;
       font-size: 15px;
       border-bottom: none;
+      background: #f5f7fa;
+      border: none;
+      color: #909399;
+      font-weight: 500;
+      width: 1345px;
     }
   }
   td {
-    min-width: 150px;
+    // min-width: 150px;
     height: 55px;
     overflow: hidden;
     text-overflow: ellipsis;
-    white-space: nowrap;
+    // white-space: nowrap;
     text-align: center;
   }
   .table-left {
@@ -259,20 +282,50 @@ $marginLeft: 152px;
       left: 0;
       font-size: 15px;
       border-right: none;
+      border: none;
+      width: 150px;
     }
     .orderList {
-      // width: 100%;
+      width: 1345px;
       margin-left: $marginLeft;
+      border: none;
       .grid {
         transition: all 0.3s;
         &:hover {
           background: #f5f5f5;
         }
+        .rmb {
+          color: #c0c4cc;
+        }
+        .grid-cell {
+          transition: all 0.2s;
+          cursor: pointer;
+          &:hover {
+            background: rgba(255, 255, 0, 0.4);
+          }
+        }
       }
     }
   }
 }
+.demonstration {
+  margin-right: 10px;
+  font-size: 15px;
+}
 table {
   border-color: #dcdfe6;
+}
+</style>
+<style>
+.customer {
+  background: #ffd600;
+}
+.customer p {
+  line-height: 25px;
+  font-size: 14px;
+}
+[class*=" el-icon-"],
+[class^="el-icon-"] {
+  line-height: 38px !important;
 }
 </style>

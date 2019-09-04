@@ -206,7 +206,7 @@ button {
 }
 
 ::-webkit-scrollbar {
-    /* display: none; */
+    display: none;
 }
 
 .flex {
